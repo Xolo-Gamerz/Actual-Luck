@@ -6,7 +6,7 @@ license="${mod_license}"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-description='''Makes Luck affect generated loot with bounded, server-side scaling.'''
+description='''Makes Luck increase chest and vault loot quantities and improves the odds of lower-weight loot entries, with bounded output scaling.'''
 
 [[dependencies.${mod_id}]]
 modId="neoforge"

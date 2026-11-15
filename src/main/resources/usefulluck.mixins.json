@@ -2,7 +2,7 @@
   "required": true,
   "package": "dev.xolo.usefulluck.mixin",
   "mixins": [
-    "LootTableGenerationDebugMixin"
+    "LootTableGenerationMixin"
   ],
   "injectors": {
     "defaultRequire": 1

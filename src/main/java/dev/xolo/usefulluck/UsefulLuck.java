@@ -7,10 +7,12 @@ import net.neoforged.fml.config.ModConfig;
 
 @Mod(UsefulLuck.MOD_ID)
 public final class UsefulLuck {
+
     public static final String MOD_ID = "usefulluck";
 
     public UsefulLuck(ModContainer container) {
-        ChestLootRarityTransformer.register();
+        // Register config before attaching listeners that may read it.
         container.registerConfig(ModConfig.Type.SYNCED, LuckConfig.SPEC);
+        ChestLootRarityTransformer.register();
     }
 }
