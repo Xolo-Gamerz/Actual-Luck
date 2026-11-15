@@ -6,7 +6,9 @@ import dev.xolo.usefulluck.LuckConfig;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.NeoForge;
+
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
@@ -22,11 +24,6 @@ public final class DropLootHandler {
         );
     }
 
-    /*
-     * Monster and animal drops.
-     *
-     * Player death drops are intentionally excluded.
-     */
     private static void onLivingDrops(LivingDropsEvent event) {
         if (event.getEntity() instanceof Player) {
             return;
@@ -52,15 +49,16 @@ public final class DropLootHandler {
         );
     }
 
-    /*
-     * Block drops.
-     *
-     * This covers ordinary block loot, including ores and crops.
-     */
     private static void onBlockDrops(BlockDropsEvent event) {
         LuckConfig.Settings settings = LuckConfig.getSettings();
 
         if (!settings.enableBlockQuantity()) {
+            return;
+        }
+
+        // Only blocks registered in the common ore tag qualify.
+        // This excludes crops, logs, stone, leaves, etc.
+        if (!event.getState().is(Tags.BlockItems.ORES.block())) {
             return;
         }
 

@@ -32,13 +32,6 @@ public final class ChestLootRarityTransformer {
     private static final Logger LOGGER =
             LoggerFactory.getLogger("UsefulLuck/Rarity");
 
-    private record RaritySettings(
-            boolean enabled,
-            double targetLuck,
-            double biasStrength,
-            int maxQualityBonus
-    ) {}
-
     public static void register() {
         NeoForge.EVENT_BUS.addListener(
                 ChestLootRarityTransformer::onLootTableLoad
@@ -55,6 +48,7 @@ public final class ChestLootRarityTransformer {
         }
 
         if (!settings.enableRarityBias()
+                || settings.rarityTargetLuck() <= 0.0D
                 || settings.rarityBiasStrength() <= 0.0D
                 || settings.maxQualityBonus() <= 0) {
             return;
@@ -145,10 +139,8 @@ public final class ChestLootRarityTransformer {
             return settings.enableEntityRarity();
         }
 
-        if (paramSet.equals(LootContextParamSets.BLOCK)
-                || paramSet.equals(LootContextParamSets.BLOCK_INTERACT)) {
-            return settings.enableBlockRarity();
-        }
+        // BLOCK and BLOCK_INTERACT are intentionally excluded.
+        // Ore quantity scaling is handled separately.
 
         return false;
     }
