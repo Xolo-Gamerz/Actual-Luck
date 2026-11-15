@@ -1,4 +1,3 @@
-
 package dev.xolo.usefulluck.loot;
 
 import dev.xolo.usefulluck.LuckConfig;
@@ -10,9 +9,12 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.util.PlaceholderLookupProvider;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.LootTableLoadEvent;
@@ -22,70 +24,44 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Modifies chest loot entry quality before weighted loot selection.
- *
- * Vanilla effective weight:
- *
- *     max(floor(weight + quality * luck), 0)
- *
- * This means Luck can influence which entry gets selected,
- * rather than modifying the result after selection.
- */
 public final class ChestLootRarityTransformer {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger("UsefulLuck/ChestRarity");
 
-    private static final Set<String> WEIGHTED_VANILLA_TYPES = Set.of(
-            "minecraft:item",
-            "minecraft:empty",
-            "minecraft:tag",
-            "minecraft:loot_table",
-            "minecraft:dynamic",
-            "minecraft:slots"
-    );
+    private static final AtomicBoolean WARNED_UNLOADED_CONFIG =
+            new AtomicBoolean(false);
 
-    private static boolean warnedAboutUnloadedConfig = false;
+    private static final AtomicBoolean WARNED_REGISTRY_PROVIDER =
+            new AtomicBoolean(false);
 
-    /**
-     * Immutable snapshot of the configuration.
-     *
-     * Taking one snapshot per table prevents repeated config reads
-     * throughout the transformation.
-     */
     private record Settings(
             boolean enabled,
             double targetLuck,
             double biasStrength,
             int maxQualityBonus
-    ) {}
+    ) {
+    }
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(
                 ChestLootRarityTransformer::onLootTableLoad
         );
+
+        LOGGER.info("[CHECK] Chest loot rarity listener registered.");
     }
 
-    /**
-     * Reads configuration safely.
-     *
-     * ConfigValue.get() throws if the config has not loaded yet.
-     * In that situation, use the declared defaults instead.
-     */
     private static Settings getSettings() {
 
         if (!LuckConfig.SPEC.isLoaded()) {
 
-            if (!warnedAboutUnloadedConfig) {
+            if (WARNED_UNLOADED_CONFIG.compareAndSet(false, true)) {
                 LOGGER.warn(
-                        "Useful Luck config is not loaded yet. "
+                        "[CHECK] Useful Luck config is not loaded yet. "
                                 + "Using default settings for early loot table loading."
                 );
-
-                warnedAboutUnloadedConfig = true;
             }
 
             return new Settings(
@@ -106,56 +82,95 @@ public final class ChestLootRarityTransformer {
 
     private static void onLootTableLoad(LootTableLoadEvent event) {
 
-        Settings settings = getSettings();
+        LootTable original = event.getTable();
 
-        if (!settings.enabled()) {
+        // Ignore non-chest loot tables.
+        if (!isTargetLootTable(original)) {
             return;
         }
 
-        if (!(event.getRegistries() instanceof HolderLookup.Provider registries)) {
+        LOGGER.info(
+                "[CHECK] Chest loot table loaded: {} | paramSet={}",
+                event.getName(),
+                original.getParamSet()
+        );
 
-            LOGGER.warn(
-                    "Cannot transform {}: loot reload did not expose HolderLookup.Provider",
+        Settings settings = getSettings();
+
+        LOGGER.info(
+                "[CHECK] Settings for {} | enabled={} | targetLuck={} | biasStrength={} | maxQualityBonus={}",
+                event.getName(),
+                settings.enabled(),
+                settings.targetLuck(),
+                settings.biasStrength(),
+                settings.maxQualityBonus()
+        );
+
+        if (!settings.enabled()
+                || settings.biasStrength() <= 0.0D
+                || settings.maxQualityBonus() <= 0) {
+
+            LOGGER.info(
+                    "[CHECK] Skipping {} because rarity modification is disabled or has zero strength.",
                     event.getName()
             );
 
             return;
         }
 
-        RegistryOps<JsonElement> ops =
-                registries.createSerializationContext(JsonOps.INSTANCE);
+        RegistryOps<JsonElement> ops;
+
+        try {
+            ops = createSerializationOps(event.getRegistries());
+
+        } catch (IllegalStateException exception) {
+
+            if (WARNED_REGISTRY_PROVIDER.compareAndSet(false, true)) {
+                LOGGER.error(
+                        "[CHECK] Cannot create registry serialization context for loot tables.",
+                        exception
+                );
+            }
+
+            return;
+        }
 
         DataResult<JsonElement> encoded =
-                LootTable.DIRECT_CODEC.encodeStart(
-                        ops,
-                        event.getTable()
-                );
+                LootTable.DIRECT_CODEC.encodeStart(ops, original);
 
         JsonElement encodedTable = encoded.resultOrPartial(
                 error -> LOGGER.warn(
-                        "Could not encode loot table {} for Luck weighting: {}",
+                        "[CHECK] Could not encode loot table {}: {}",
                         event.getName(),
                         error
                 )
         ).orElse(null);
 
         if (!(encodedTable instanceof JsonObject tableJson)) {
-            return;
-        }
+            LOGGER.warn(
+                    "[CHECK] Encoded loot table {} was not a JSON object.",
+                    event.getName()
+            );
 
-        if (!isChestTable(event, tableJson)) {
             return;
         }
 
         JsonArray pools = getArray(tableJson, "pools");
 
         if (pools == null || pools.isEmpty()) {
+            LOGGER.info(
+                    "[CHECK] {} contains no loot pools.",
+                    event.getName()
+            );
+
             return;
         }
 
         int changedEntries = 0;
 
-        for (JsonElement poolElement : pools) {
+        for (int poolIndex = 0; poolIndex < pools.size(); poolIndex++) {
+
+            JsonElement poolElement = pools.get(poolIndex);
 
             if (!(poolElement instanceof JsonObject pool)) {
                 continue;
@@ -163,70 +178,90 @@ public final class ChestLootRarityTransformer {
 
             JsonArray entries = getArray(pool, "entries");
 
-            if (entries != null) {
-                changedEntries += weightSiblingEntries(entries, settings);
+            if (entries == null) {
+                continue;
             }
+
+            int poolChanges = weightSiblingEntries(entries, settings);
+
+            changedEntries += poolChanges;
+
+            LOGGER.info(
+                    "[CHECK] {} | pool={} | modifiedEntries={}",
+                    event.getName(),
+                    poolIndex,
+                    poolChanges
+            );
         }
 
         if (changedEntries == 0) {
+
+            LOGGER.info(
+                    "[CHECK] {}: no entries modified.",
+                    event.getName()
+            );
+
             return;
         }
+
+        LOGGER.info(
+                "[CHECK] {}: modified {} entries.",
+                event.getName(),
+                changedEntries
+        );
 
         DataResult<LootTable> decoded =
                 LootTable.DIRECT_CODEC.parse(ops, tableJson);
 
         LootTable transformed = decoded.resultOrPartial(
                 error -> LOGGER.error(
-                        "Could not decode Luck-weighted chest table {}: {}",
+                        "[CHECK] Could not decode transformed loot table {}: {}",
                         event.getName(),
                         error
                 )
         ).orElse(null);
 
-        if (transformed != null) {
-
-            event.setTable(transformed);
-
-            LOGGER.debug(
-                    "Applied Luck rarity weighting to {} ({} weighted entries)",
-                    event.getName(),
-                    changedEntries
+        if (transformed == null) {
+            LOGGER.error(
+                    "[CHECK] Transformation failed for {}. Keeping original table.",
+                    event.getName()
             );
+
+            return;
         }
+
+        event.setTable(transformed);
+
+        LOGGER.info(
+                "[CHECK] Successfully applied rarity transformation to {}.",
+                event.getName()
+        );
     }
 
-    /**
-     * Determines whether a loot table belongs to chest/vault loot.
-     */
-    private static boolean isChestTable(
-            LootTableLoadEvent event,
-            JsonObject table
+    private static RegistryOps<JsonElement> createSerializationOps(
+            HolderGetter.Provider provider
     ) {
 
-        JsonElement type = table.get("type");
-
-        if (type != null && type.isJsonPrimitive()) {
-
-            String typeId = type.getAsString();
-
-            if ("minecraft:chest".equals(typeId)
-                    || "minecraft:vault".equals(typeId)) {
-                return true;
-            }
+        if (provider instanceof PlaceholderLookupProvider placeholder) {
+            return placeholder.createSerializationContext(JsonOps.INSTANCE);
         }
 
-        String path = event.getName().getPath();
+        if (provider instanceof HolderLookup.Provider lookup) {
+            return lookup.createSerializationContext(JsonOps.INSTANCE);
+        }
 
-        return path.startsWith("chests/")
-                || path.startsWith("loot_tables/chests/");
+        throw new IllegalStateException(
+                "Unsupported registry provider: "
+                        + provider.getClass().getName()
+        );
     }
 
-    /**
-     * Processes all competing entries in a pool.
-     *
-     * Lower-weight entries receive a larger quality bonus.
-     * Composite entries are traversed recursively.
-     */
+    private static boolean isTargetLootTable(LootTable table) {
+
+        return table.getParamSet().equals(LootContextParamSets.CHEST)
+                || table.getParamSet().equals(LootContextParamSets.VAULT);
+    }
+
     private static int weightSiblingEntries(
             JsonArray entries,
             Settings settings
@@ -236,10 +271,13 @@ public final class ChestLootRarityTransformer {
 
         collectWeightedCandidates(entries, candidates);
 
+        if (candidates.isEmpty()) {
+            return 0;
+        }
+
         int maxWeight = 1;
 
         for (JsonObject candidate : candidates) {
-
             maxWeight = Math.max(
                     maxWeight,
                     readWeight(candidate)
@@ -268,9 +306,11 @@ public final class ChestLootRarityTransformer {
                 continue;
             }
 
+            long updatedQuality = (long) existingQuality + delta;
+
             int newQuality = (int) Math.min(
-                    (long) settings.maxQualityBonus(),
-                    (long) existingQuality + delta
+                    Integer.MAX_VALUE,
+                    updatedQuality
             );
 
             if (newQuality > existingQuality) {
@@ -280,19 +320,27 @@ public final class ChestLootRarityTransformer {
                         newQuality
                 );
 
+                LOGGER.info(
+                        "[CHECK] Entry {} | weight={} | quality {} -> {} | delta={}",
+                        candidate.has("name")
+                                ? candidate.get("name")
+                                : "<unnamed>",
+                        weight,
+                        existingQuality,
+                        newQuality,
+                        delta
+                );
+
                 changed++;
             }
         }
 
-        // Inline nested loot tables have their own independent pools.
-        changed += transformNestedTables(entries, settings);
+        // Process composite children and inline nested loot tables separately.
+        changed += transformNestedEntries(entries, settings);
 
         return changed;
     }
 
-    /**
-     * Collects weighted entries, including descendants of composite entries.
-     */
     private static void collectWeightedCandidates(
             JsonArray entries,
             List<JsonObject> output
@@ -304,25 +352,13 @@ public final class ChestLootRarityTransformer {
                 continue;
             }
 
-            if (isWeightedEntry(entry)) {
+            if (entry.has("type") || entry.has("weight")) {
                 output.add(entry);
-            }
-
-            JsonArray children = getArray(entry, "children");
-
-            if (children != null) {
-                collectWeightedCandidates(children, output);
             }
         }
     }
 
-    /**
-     * Processes inline nested loot tables.
-     *
-     * Referenced loot tables are processed independently when their
-     * own LootTableLoadEvent fires.
-     */
-    private static int transformNestedTables(
+    private static int transformNestedEntries(
             JsonArray entries,
             Settings settings
     ) {
@@ -338,43 +374,36 @@ public final class ChestLootRarityTransformer {
             JsonArray children = getArray(entry, "children");
 
             if (children != null) {
-                changed += transformNestedTables(children, settings);
+                changed += weightSiblingEntries(
+                        children,
+                        settings
+                );
             }
 
             JsonElement value = entry.get("value");
 
-            if (value == null || !value.isJsonObject()) {
+            if (value == null) {
                 continue;
             }
 
-            JsonObject nestedTable = value.getAsJsonObject();
+            if (value instanceof JsonObject nestedTable) {
 
-            JsonArray inlinePools = getArray(
-                    nestedTable,
-                    "pools"
-            );
-
-            if (inlinePools == null) {
-                continue;
-            }
-
-            for (JsonElement poolElement : inlinePools) {
-
-                if (!(poolElement instanceof JsonObject inlinePool)) {
-                    continue;
-                }
-
-                JsonArray nestedEntries = getArray(
-                        inlinePool,
-                        "entries"
+                changed += transformInlineLootTable(
+                        nestedTable,
+                        settings
                 );
 
-                if (nestedEntries != null) {
+            } else if (value instanceof JsonArray nestedTables) {
 
-                    changed += weightSiblingEntries(
-                            nestedEntries,
-                            settings
-                    );
+                for (JsonElement nestedElement : nestedTables) {
+
+                    if (nestedElement instanceof JsonObject nestedTable) {
+
+                        changed += transformInlineLootTable(
+                                nestedTable,
+                                settings
+                        );
+                    }
                 }
             }
         }
@@ -382,18 +411,45 @@ public final class ChestLootRarityTransformer {
         return changed;
     }
 
-    /**
-     * Calculates the additional quality assigned to an entry.
-     */
+    private static int transformInlineLootTable(
+            JsonObject nestedTable,
+            Settings settings
+    ) {
+
+        JsonArray pools = getArray(nestedTable, "pools");
+
+        if (pools == null) {
+            return 0;
+        }
+
+        int changed = 0;
+
+        for (JsonElement poolElement : pools) {
+
+            if (!(poolElement instanceof JsonObject pool)) {
+                continue;
+            }
+
+            JsonArray entries = getArray(pool, "entries");
+
+            if (entries != null) {
+                changed += weightSiblingEntries(
+                        entries,
+                        settings
+                );
+            }
+        }
+
+        return changed;
+    }
+
     private static int calculateQualityDelta(
             int maxWeight,
             int weight,
             Settings settings
     ) {
 
-        if (settings.biasStrength() <= 0.0D
-                || weight <= 0
-                || maxWeight <= weight) {
+        if (weight <= 0 || maxWeight <= weight) {
             return 0;
         }
 
@@ -409,28 +465,6 @@ public final class ChestLootRarityTransformer {
         );
     }
 
-    /**
-     * Checks whether an entry participates in weighted selection.
-     */
-    private static boolean isWeightedEntry(JsonObject entry) {
-
-        JsonElement type = entry.get("type");
-
-        if (type == null || !type.isJsonPrimitive()) {
-            return entry.has("weight");
-        }
-
-        String id = type.getAsString();
-
-        return entry.has("weight")
-                || WEIGHTED_VANILLA_TYPES.contains(id);
-    }
-
-    /**
-     * Reads an entry's base weight.
-     *
-     * Explicit zero-weight entries remain impossible to select.
-     */
     private static int readWeight(JsonObject entry) {
 
         return Math.max(
@@ -453,14 +487,12 @@ public final class ChestLootRarityTransformer {
 
         try {
             return value.getAsInt();
+
         } catch (NumberFormatException ignored) {
             return fallback;
         }
     }
 
-    /**
-     * Safely retrieves a JSON array.
-     */
     private static JsonArray getArray(
             JsonObject object,
             String key
@@ -475,6 +507,6 @@ public final class ChestLootRarityTransformer {
         return element.getAsJsonArray();
     }
 
-    private ChestLootRarityTransformer() {}
+    private ChestLootRarityTransformer() {
+    }
 }
-

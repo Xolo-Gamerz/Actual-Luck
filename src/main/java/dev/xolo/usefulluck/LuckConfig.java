@@ -3,12 +3,15 @@ package dev.xolo.usefulluck;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class LuckConfig {
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    private static final ModConfigSpec.Builder BUILDER =
+            new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.BooleanValue ENABLE_CHEST_RARITY;
     public static final ModConfigSpec.DoubleValue TARGET_LUCK;
     public static final ModConfigSpec.DoubleValue BIAS_STRENGTH;
     public static final ModConfigSpec.IntValue MAX_QUALITY_BONUS;
+
     public static final ModConfigSpec SPEC;
 
     static {
@@ -31,8 +34,10 @@ public final class LuckConfig {
                 .defineInRange("maxQualityBonus", 256, 0, 4096);
 
         BUILDER.pop();
+
         SPEC = BUILDER.build();
     }
 
-    private LuckConfig() {}
+    private LuckConfig() {
+    }
 }
