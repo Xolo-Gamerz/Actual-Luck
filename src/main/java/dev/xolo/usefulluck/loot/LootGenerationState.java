@@ -1,14 +1,15 @@
+
 package dev.xolo.usefulluck.loot;
 
-/**
- * Carries Luck from LootTable#fill to LootTable#shuffleAndSplitItems.
- */
 public final class LootGenerationState {
 
     private static final ThreadLocal<Float> PENDING_CHEST_LUCK =
             new ThreadLocal<>();
 
-    public static void beginFill(boolean isChestTable, float luck) {
+    public static void beginFill(
+            boolean isChestTable,
+            float luck
+    ) {
         if (isChestTable) {
             PENDING_CHEST_LUCK.set(luck);
         } else {
@@ -26,6 +27,5 @@ public final class LootGenerationState {
         PENDING_CHEST_LUCK.remove();
     }
 
-    private LootGenerationState() {
-    }
+    private LootGenerationState() {}
 }
