@@ -11,6 +11,6 @@ public final class UsefulLuck {
 
     public UsefulLuck(ModContainer container) {
         ChestLootRarityTransformer.register();
-        container.registerConfig(ModConfig.Type.SERVER, LuckConfig.SPEC);
+        container.registerConfig(ModConfig.Type.SYNCED, LuckConfig.SPEC);
     }
 }

@@ -1,6 +1,7 @@
 package dev.xolo.usefulluck.loot;
 
 import com.google.gson.JsonArray;
+import dev.xolo.usefulluck.LuckConfig;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
