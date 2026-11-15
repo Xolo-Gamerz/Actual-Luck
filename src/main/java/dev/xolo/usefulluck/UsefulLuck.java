@@ -11,7 +11,6 @@ public final class UsefulLuck {
     public static final String MOD_ID = "usefulluck";
 
     public UsefulLuck(ModContainer container) {
-        // Register config before attaching listeners that may read it.
         container.registerConfig(ModConfig.Type.SYNCED, LuckConfig.SPEC);
         ChestLootRarityTransformer.register();
     }

@@ -1,25 +1,29 @@
 package dev.xolo.usefulluck.loot;
 
-/** Tracks nested LootTable#getRandomItems calls on the current thread. */
+/**
+ * Carries Luck from LootTable#fill to LootTable#shuffleAndSplitItems.
+ */
 public final class LootGenerationState {
 
-    private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<Float> PENDING_CHEST_LUCK =
+            new ThreadLocal<>();
 
-    public static void enter() {
-        DEPTH.set(DEPTH.get() + 1);
-    }
-
-    public static int depth() {
-        return DEPTH.get();
-    }
-
-    public static void exit() {
-        int depth = DEPTH.get();
-        if (depth <= 1) {
-            DEPTH.remove();
+    public static void beginFill(boolean isChestTable, float luck) {
+        if (isChestTable) {
+            PENDING_CHEST_LUCK.set(luck);
         } else {
-            DEPTH.set(depth - 1);
+            PENDING_CHEST_LUCK.remove();
         }
+    }
+
+    public static Float takeChestLuck() {
+        Float luck = PENDING_CHEST_LUCK.get();
+        PENDING_CHEST_LUCK.remove();
+        return luck;
+    }
+
+    public static void clear() {
+        PENDING_CHEST_LUCK.remove();
     }
 
     private LootGenerationState() {
