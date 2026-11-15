@@ -21,3 +21,6 @@ type="required"
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
+
+[[mixins]]
+config="usefulluck.mixins.json"
