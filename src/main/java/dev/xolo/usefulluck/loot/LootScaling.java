@@ -94,6 +94,26 @@ public final class LootScaling {
     }
 
     /*
+     * Ominous Item Spawners dispense one selected stack per entity. Scale a
+     * copy of that stack without mutating the cached weighted selection list.
+     */
+    public static ItemStack scaleOminousDispensedStack(
+            ItemStack original,
+            float luck,
+            LuckConfig.Settings settings
+    ) {
+        ItemStack scaled = original.copy();
+        int multiplier = getMultiplier(luck, settings);
+        if (multiplier <= 1 || scaled.isEmpty() || scaled.getMaxStackSize() <= 1) {
+            return scaled;
+        }
+
+        long desiredCount = (long) scaled.getCount() * multiplier;
+        scaled.setCount((int) Math.min(desiredCount, scaled.getMaxStackSize()));
+        return scaled;
+    }
+
+    /*
      * Vault output does not use the chest container filling path.
      */
     public static void scaleVaultOutput(
