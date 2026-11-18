@@ -43,7 +43,7 @@ public final class ChestLootRarityTransformer {
 
         LuckConfig.Settings settings = LuckConfig.getSettings();
 
-        if (!isRarityEnabled(original, settings)) {
+        if (!isRarityEnabled(original, settings, event.getName().getPath())) {
             return;
         }
 
@@ -123,8 +123,20 @@ public final class ChestLootRarityTransformer {
 
     private static boolean isRarityEnabled(
             LootTable table,
-            LuckConfig.Settings settings
+            LuckConfig.Settings settings,
+            String tablePath
     ) {
+        // Trial Spawner rewards use the EMPTY parameter set, so identify them
+        // by their dedicated vanilla loot-table paths rather than param set.
+        if (tablePath.startsWith("spawners/ominous/trial_chamber/")
+                || tablePath.endsWith("/items_to_drop_when_ominous")) {
+            return settings.enableOminousTrialSpawnerRarity();
+        }
+
+        if (tablePath.startsWith("spawners/trial_chamber/")) {
+            return settings.enableTrialSpawnerRarity();
+        }
+
         var paramSet = table.getParamSet();
 
         if (paramSet.equals(LootContextParamSets.CHEST)) {

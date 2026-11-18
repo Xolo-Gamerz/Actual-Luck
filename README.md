@@ -94,3 +94,22 @@ The GitHub Actions workflow builds on every push and pull request with Java 25 a
 ## Verification status
 
 The source archive is generated, but this environment has Java 21 and no installed Gradle, so I could not execute a Java 25 NeoForge compilation here. The first GitHub Actions build is the compilation gate before in-game testing.
+
+
+## Trial Spawner Luck
+
+Trial Spawner rewards are handled separately from chest and vault loot. This feature hooks the dedicated reward-ejection path, so it does not change ordinary mob drops or chest generation.
+
+- **Quantity:** scales generated normal and ominous Trial Spawner reward stacks using the existing quantity-per-Luck and extra-stack limits. It also scales the selected stack dispensed by Ominous Item Spawners. Unstackable rewards are not duplicated.
+- **Rarity:** normal and ominous Trial Spawner reward tables, including the Ominous Item Spawner's item table, receive the existing weighted-quality adjustment. Their loot contexts are rebuilt with the highest eligible nearby player's Luck, which is necessary because vanilla creates these reward contexts with the `EMPTY` parameter set and zero Luck.
+- **Trial Keys:** Luck increases the weight of the key loot-table entry in the spawner's existing weighted reward list. This changes the chance of selecting the key reward; it does not add keys to the consumables table or reroll rewards.
+
+For multiplayer, the spawner uses the **highest Luck among alive, non-creative, non-spectator players within its configured required-player range**. The same rule is used for the key reward selection and the contents of each ejected reward.
+
+The `trial_spawners` config group provides separate normal/ominous quantity and rarity toggles, plus:
+
+- `keyWeightEnabled`: enable Luck-based key weighting.
+- `keyWeightPerLuck`: additional key-weight multiplier growth per point of the highest nearby Luck (default `0.25`).
+- `maxKeyWeightMultiplier`: cap on the key entry's weight multiplier (default `8`).
+
+At the defaults, Luck 10 multiplies the key entry's selection weight by 3. For a normal 1:1 key/consumables list, that changes the key selection chance from 50% to 75%. The exact resulting chance still depends on the spawner config's original weights.
