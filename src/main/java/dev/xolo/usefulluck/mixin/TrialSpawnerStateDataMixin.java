@@ -5,6 +5,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -30,10 +32,11 @@ public abstract class TrialSpawnerStateDataMixin {
             TrialSpawnerConfig config,
             BlockPos pos
     ) {
-        Float luck = TrialSpawnerLootState.getDispensingLuck();
-        if (luck == null) {
-            return lootTable.getRandomItems(params, seed);
-        }
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        int range = blockEntity instanceof TrialSpawnerBlockEntity trialSpawnerBlockEntity
+                ? trialSpawnerBlockEntity.getTrialSpawner().getRequiredPlayerRange()
+                : 14;
+        float luck = TrialSpawnerLootState.getHighestNearbyLuck(level, pos, range);
 
         LootParams luckParams = new LootParams.Builder(level)
                 .withLuck(luck)
