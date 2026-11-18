@@ -4,7 +4,8 @@
   "mixins": [
     "LootTableGenerationMixin",
     "TrialSpawnerMixin",
-    "TrialSpawnerStateMixin"
+    "TrialSpawnerStateMixin",
+    "TrialSpawnerStateDataMixin"
   ],
   "injectors": {
     "defaultRequire": 1
