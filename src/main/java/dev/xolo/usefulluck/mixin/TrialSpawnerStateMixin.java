@@ -21,8 +21,7 @@ public abstract class TrialSpawnerStateMixin {
             method = "tickAndGetNext(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/trialspawner/TrialSpawner;Lnet/minecraft/server/level/ServerLevel;)Lnet/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState;",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/util/random/WeightedList;getRandom(Lnet/minecraft/util/RandomSource;)Ljava/util/Optional;",
-                    ordinal = 1
+                    target = "Lnet/minecraft/util/random/WeightedList;getRandom(Lnet/minecraft/util/RandomSource;)Ljava/util/Optional;"
             )
     )
     private Optional<ResourceKey<LootTable>> usefulluck$adjustKeyWeight(
@@ -40,13 +39,17 @@ public abstract class TrialSpawnerStateMixin {
         float maxLuck = TrialSpawnerLootState.getHighestNearbyLuck(
                 level, pos, spawner.getRequiredPlayerRange()
         );
-        if (maxLuck <= 0.0F) return original.getRandom(random);
+        if (maxLuck <= 0.0F) {
+            return original.getRandom(random);
+        }
 
         int multiplier = (int) Math.min(
                 settings.maxTrialKeyWeightMultiplier(),
                 1.0D + Math.floor(maxLuck * settings.trialKeyWeightPerLuck())
         );
-        if (multiplier <= 1) return original.getRandom(random);
+        if (multiplier <= 1) {
+            return original.getRandom(random);
+        }
 
         WeightedList.Builder<ResourceKey<LootTable>> adjusted = WeightedList.builder();
         for (Weighted<ResourceKey<LootTable>> entry : original.unwrap()) {
