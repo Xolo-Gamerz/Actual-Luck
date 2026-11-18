@@ -1,7 +1,6 @@
 package dev.xolo.usefulluck.mixin;
 
 import dev.xolo.usefulluck.LuckConfig;
-import dev.xolo.usefulluck.loot.LootScaling;
 import dev.xolo.usefulluck.loot.TrialSpawnerLootState;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -10,9 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.Weighted;
 import net.minecraft.util.random.WeightedList;
-import net.minecraft.world.entity.OminousItemSpawner;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawner;
 import net.minecraft.world.level.storage.loot.LootTable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -65,30 +61,5 @@ public abstract class TrialSpawnerStateMixin {
         }
 
         return adjusted.build().getRandom(random);
-    }
-
-    @Redirect(
-            method = "spawnOminousOminousItemSpawner(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/trialspawner/TrialSpawner;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/entity/OminousItemSpawner;create(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/world/entity/OminousItemSpawner;"
-            )
-    )
-    private OminousItemSpawner usefulluck$scaleOminousDispensedItem(
-            Level level,
-            ItemStack item,
-            ServerLevel serverLevel,
-            BlockPos pos,
-            TrialSpawner spawner
-    ) {
-        LuckConfig.Settings settings = LuckConfig.getSettings();
-        if (settings.enableOminousTrialSpawnerQuantity()) {
-            float luck = TrialSpawnerLootState.getHighestNearbyLuck(
-                    serverLevel, pos, spawner.getRequiredPlayerRange()
-            );
-            item = LootScaling.scaleOminousDispensedStack(item, luck, settings);
-        }
-
-        return OminousItemSpawner.create(level, item);
     }
 }
