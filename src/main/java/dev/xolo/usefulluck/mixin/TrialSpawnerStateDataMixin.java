@@ -1,5 +1,7 @@
 package dev.xolo.usefulluck.mixin;
 
+import dev.xolo.usefulluck.LuckConfig;
+import dev.xolo.usefulluck.loot.LootScaling;
 import dev.xolo.usefulluck.loot.TrialSpawnerLootState;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
@@ -37,10 +39,19 @@ public abstract class TrialSpawnerStateDataMixin {
                 ? trialSpawnerBlockEntity.getTrialSpawner().getRequiredPlayerRange()
                 : 14;
         float luck = TrialSpawnerLootState.getHighestNearbyLuck(level, pos, range);
+        LuckConfig.Settings settings = LuckConfig.getSettings();
 
         LootParams luckParams = new LootParams.Builder(level)
                 .withLuck(luck)
                 .create(LootContextParamSets.EMPTY);
-        return lootTable.getRandomItems(luckParams, seed);
+        ObjectArrayList<ItemStack> generated = lootTable.getRandomItems(luckParams, seed);
+
+        if (settings.enableOminousTrialSpawnerQuantity()) {
+            for (int i = 0; i < generated.size(); i++) {
+                generated.set(i, LootScaling.scaleOminousDispensedStack(generated.get(i), luck, settings));
+            }
+        }
+
+        return generated;
     }
 }
