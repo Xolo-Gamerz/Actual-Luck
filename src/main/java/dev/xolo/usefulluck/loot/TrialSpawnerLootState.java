@@ -14,7 +14,7 @@ public final class TrialSpawnerLootState {
                 continue;
             }
 
-            if (player.distanceToSqr(pos.getCenter()) > maxDistanceSqr) {
+            if (player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) > maxDistanceSqr) {
                 continue;
             }
 
