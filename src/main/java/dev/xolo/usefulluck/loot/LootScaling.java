@@ -73,6 +73,27 @@ public final class LootScaling {
     }
 
     /*
+     * Trial Spawner rewards are ejected directly, not filled into a container.
+     * They still use the same stack-size and extra-stack limits as other loot.
+     */
+    public static void scaleTrialSpawnerOutput(
+            ObjectArrayList<ItemStack> generated,
+            float luck,
+            LuckConfig.Settings settings
+    ) {
+        if (generated.isEmpty()) {
+            return;
+        }
+
+        int multiplier = getMultiplier(luck, settings);
+        if (multiplier <= 1) {
+            return;
+        }
+
+        scaleStacks(generated, multiplier, settings.maxAddedStacks());
+    }
+
+    /*
      * Vault output does not use the chest container filling path.
      */
     public static void scaleVaultOutput(
