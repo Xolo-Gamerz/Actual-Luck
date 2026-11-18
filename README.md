@@ -100,8 +100,8 @@ The source archive is generated, but this environment has Java 21 and no install
 
 Trial Spawner rewards are handled separately from chest and vault loot. This feature hooks the dedicated reward-ejection path, so it does not change ordinary mob drops or chest generation.
 
-- **Quantity:** scales the generated normal and ominous Trial Spawner reward stacks using the existing quantity-per-Luck and extra-stack limits. Unstackable rewards are not duplicated.
-- **Rarity:** the normal and ominous Trial Spawner reward loot tables receive the existing weighted-quality adjustment. Their loot contexts are rebuilt with the highest eligible nearby player's Luck, which is necessary because vanilla creates these reward contexts with the `EMPTY` parameter set and zero Luck.
+- **Quantity:** scales generated normal and ominous Trial Spawner reward stacks using the existing quantity-per-Luck and extra-stack limits. It also scales the selected stack dispensed by Ominous Item Spawners. Unstackable rewards are not duplicated.
+- **Rarity:** normal and ominous Trial Spawner reward tables, including the Ominous Item Spawner's item table, receive the existing weighted-quality adjustment. Their loot contexts are rebuilt with the highest eligible nearby player's Luck, which is necessary because vanilla creates these reward contexts with the `EMPTY` parameter set and zero Luck.
 - **Trial Keys:** Luck increases the weight of the key loot-table entry in the spawner's existing weighted reward list. This changes the chance of selecting the key reward; it does not add keys to the consumables table or reroll rewards.
 
 For multiplayer, the spawner uses the **highest Luck among alive, non-creative, non-spectator players within its configured required-player range**. The same rule is used for the key reward selection and the contents of each ejected reward.
