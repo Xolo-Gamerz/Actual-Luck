@@ -31,6 +31,27 @@ jobs:
       - name: Build
         run: ./gradlew --no-daemon clean build
 
+      - name: Prepare dedicated server smoke test
+        run: |
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+
+      - name: Verify dedicated server startup and Mixin application
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=15s 120s ./gradlew --no-daemon runServer > server-smoke.log 2>&1
+          status=$?
+          set -e
+          cat server-smoke.log
+
+          if grep -Fq "Done (" server-smoke.log && { [ "$status" -eq 0 ] || [ "$status" -eq 124 ]; }; then
+            echo "Dedicated server reached the ready state."
+            exit 0
+          fi
+
+          exit "$status"
+
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
