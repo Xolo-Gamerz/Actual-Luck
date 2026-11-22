@@ -118,4 +118,4 @@ The mod JAR is written to build/libs/. GitHub Actions runs the same wrapper-base
 
 ## Verification
 
-A successful compile does not prove that runtime Mixin injections apply. The packaged refmap and the Trial Spawner, chest, and vault injection points must also be validated in a 1.21.1 NeoForge game environment.
+A successful compile does not prove that runtime Mixin injections apply. The Trial Spawner, chest, and vault injection points must also be validated in a 1.21.1 NeoForge game environment.
