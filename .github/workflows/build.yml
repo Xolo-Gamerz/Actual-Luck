@@ -24,6 +24,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # The repository tracks wrapper scripts/properties but not wrapper.jar.
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 9.2.1 --distribution-type bin
+
       - name: Build
         run: ./gradlew --no-daemon clean build
 
