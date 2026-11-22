@@ -32,19 +32,29 @@ public abstract class TrialSpawnerDataMixin {
                 ? trialSpawnerBlockEntity.getTrialSpawner().getRequiredPlayerRange()
                 : 14;
         float luck = TrialSpawnerLootState.getHighestNearbyLuck(level, pos, range);
-        LuckConfig.Settings settings = LuckConfig.getSettings();
 
         LootParams luckParams = new LootParams.Builder(level)
                 .withLuck(luck)
                 .create(LootContextParamSets.EMPTY);
-        ObjectArrayList<ItemStack> generated = lootTable.getRandomItems(luckParams, seed);
+        return lootTable.getRandomItems(luckParams, seed);
+    }
 
-        if (settings.enableOminousTrialSpawnerQuantity()) {
-            for (int i = 0; i < generated.size(); i++) {
-                generated.set(i, LootScaling.scaleOminousDispensedStack(generated.get(i), luck, settings));
-            }
-        }
+    @Redirect(
+            method = "getDispensingItems(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/level/block/entity/trialspawner/TrialSpawnerConfig;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/util/random/SimpleWeightedRandomList;",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/world/item/ItemStack;copyWithCount(I)Lnet/minecraft/world/item/ItemStack;")
+    )
+    private ItemStack usefulluck$scaleOminousDispensedStack(
+            ItemStack original, int count, ServerLevel level, TrialSpawnerConfig config, BlockPos pos) {
+        ItemStack stack = original.copyWithCount(count);
+        LuckConfig.Settings settings = LuckConfig.getSettings();
+        if (!settings.enableOminousTrialSpawnerQuantity()) return stack;
 
-        return generated;
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        int range = blockEntity instanceof TrialSpawnerBlockEntity trialSpawnerBlockEntity
+                ? trialSpawnerBlockEntity.getTrialSpawner().getRequiredPlayerRange()
+                : 14;
+        float luck = TrialSpawnerLootState.getHighestNearbyLuck(level, pos, range);
+        return LootScaling.scaleOminousDispensedStack(stack, luck, settings);
     }
 }
