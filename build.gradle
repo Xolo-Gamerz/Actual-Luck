@@ -13,12 +13,8 @@ base {
 }
 
 // Keep the requested Java 25 toolchain while targeting the Java 21 runtime
-// baseline used by Minecraft 1.21.1 and its Mixin runtime.
+// baseline used by Minecraft 1.21.1.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-
-dependencies {
-    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
-}
 
 neoForge {
     version = project.neo_version
