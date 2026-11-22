@@ -68,7 +68,7 @@ public final class LuckConfig {
         ENABLE_CHEST_QUANTITY = BUILDER.comment("Scale generated chest loot quantities.").define("chestEnabled", true);
         ENABLE_VAULT_QUANTITY = BUILDER.comment("Scale generated vault loot quantities.").define("vaultEnabled", true);
         ENABLE_ENTITY_QUANTITY = BUILDER.comment("Scale drops from non-player living entities.").define("entityEnabled", true);
-        ENABLE_BLOCK_QUANTITY = BUILDER.comment("Scale drops from broken blocks, including ores and crops.").define("blockEnabled", true);
+        ENABLE_BLOCK_QUANTITY = BUILDER.comment("Scale drops from ore-tagged blocks.").define("blockEnabled", true);
         QUANTITY_PER_LUCK = BUILDER.comment("Additional quantity multiplier gained per point of Luck.").defineInRange("quantityPerLuck", 0.5D, 0.0D, 10.0D);
         MAX_QUANTITY_MULTIPLIER = BUILDER.comment("Maximum quantity multiplier.").defineInRange("maxQuantityMultiplier", 32, 1, 256);
         MAX_ADDED_STACKS = BUILDER.comment("Maximum additional stacks or dropped item entities per loot operation.").defineInRange("maxAddedStacks", 27, 0, 256);
@@ -79,7 +79,7 @@ public final class LuckConfig {
         ENABLE_CHEST_RARITY = BUILDER.comment("Apply rarity adjustments to chest loot.").define("chestEnabled", true);
         ENABLE_VAULT_RARITY = BUILDER.comment("Apply rarity adjustments to vault loot.").define("vaultEnabled", true);
         ENABLE_ENTITY_RARITY = BUILDER.comment("Apply rarity adjustments to entity loot.").define("entityEnabled", true);
-        ENABLE_BLOCK_RARITY = BUILDER.comment("Apply rarity adjustments to block loot.").define("blockEnabled", true);
+        ENABLE_BLOCK_RARITY = BUILDER.comment("Reserved; block rarity adjustments are not currently applied.").define("blockEnabled", true);
         RARITY_TARGET_LUCK = BUILDER.comment("Luck value used to calibrate rarity adjustments.").defineInRange("targetLuck", 10.0D, 1.0D, 100.0D);
         RARITY_BIAS_STRENGTH = BUILDER.comment("Strength of the rarity adjustment.").defineInRange("biasStrength", 1.5D, 0.0D, 5.0D);
         MAX_QUALITY_BONUS = BUILDER.comment("Maximum additional quality assigned to an entry.").defineInRange("maxQualityBonus", 128, 0, 4096);
