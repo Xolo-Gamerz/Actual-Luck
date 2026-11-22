@@ -1,11 +1,17 @@
 {
   "required": true,
+  "minVersion": "0.8.7",
   "package": "dev.xolo.usefulluck.mixin",
+  "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "LootTableAccessor",
+    "LootPoolAccessor",
+    "LootPoolSingletonContainerAccessor",
+    "CompositeEntryBaseAccessor",
     "LootTableGenerationMixin",
     "TrialSpawnerMixin",
     "TrialSpawnerStateMixin",
-    "TrialSpawnerStateDataMixin"
+    "TrialSpawnerDataMixin"
   ],
   "injectors": {
     "defaultRequire": 1

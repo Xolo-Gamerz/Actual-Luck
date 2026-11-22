@@ -1,4 +1,4 @@
-name: Build Useful Luck
+name: Build Useful Luck (NeoForge 1.21.1)
 
 on:
   push:
@@ -24,16 +24,38 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # The repository tracks wrapper scripts/properties but not wrapper.jar.
       - name: Generate Gradle Wrapper
-        run: gradle wrapper
+        run: gradle wrapper --gradle-version 9.2.1 --distribution-type bin
 
       - name: Build
-        run: gradle build
+        run: ./gradlew --no-daemon clean build
+
+      - name: Prepare dedicated server smoke test
+        run: |
+          mkdir -p run/server
+          printf 'eula=true\n' > run/server/eula.txt
+
+      - name: Verify dedicated server startup and Mixin application
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=15s 120s ./gradlew --no-daemon runServer > server-smoke.log 2>&1
+          status=$?
+          set -e
+          cat server-smoke.log
+
+          if grep -Fq "Done (" server-smoke.log && { [ "$status" -eq 0 ] || [ "$status" -eq 124 ]; }; then
+            echo "Dedicated server reached the ready state."
+            exit 0
+          fi
+
+          exit "$status"
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: useful-luck-${{ github.sha }}
+          name: useful-luck-1.21.1-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
           retention-days: 14

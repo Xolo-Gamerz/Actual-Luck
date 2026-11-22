@@ -6,7 +6,7 @@ license="${mod_license}"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-description='''Makes Luck increase chest and vault loot quantities and improves the odds of lower-weight loot entries, with bounded output scaling.'''
+description='''Makes Luck increase chest, vault, entity, block, and Trial Spawner loot quantities and improves weighted loot selection.'''
 
 [[dependencies.${mod_id}]]
 modId="neoforge"

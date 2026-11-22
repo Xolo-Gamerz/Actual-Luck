@@ -12,6 +12,8 @@ base {
     archivesName = mod_id
 }
 
+// Keep the requested Java 25 toolchain while targeting the Java 21 runtime
+// baseline used by Minecraft 1.21.1.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
@@ -24,6 +26,7 @@ neoForge {
         }
         server {
             server()
+            gameDirectory = project.file('run/server')
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
@@ -38,6 +41,7 @@ neoForge {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.release = 21
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
