@@ -25,7 +25,7 @@ The quantity multiplier is:
 
 **multiplier = min(maxQuantityMultiplier, 1 + floor(luck × quantityPerLuck))**
 
-Unstackable items are not duplicated. Additional stacks or item entities are limited by maxAddedStacks.
+Unstackable items are not duplicated. Additional stacks or item entities are limited by maxAddedStacks. Existing stacks still scale when the extra-stack budget is zero.
 
 ### Loot rarity weighting
 
@@ -52,7 +52,7 @@ Trial Spawner rewards use the highest Luck among alive, non-creative, non-specta
 
 - Normal and ominous reward tables receive that Luck for rarity selection.
 - Normal and ominous reward quantities can be scaled independently.
-- Ominous Item Spawner dispensing-table entries are generated with the same nearby-player Luck and can have their stack quantities scaled.
+- Ominous Item Spawner dispensing tables use that Luck for loot generation. The selected one-item stack is scaled without changing its weighted selection chance.
 - Luck increases the weight of Trial Key reward entries in the spawner's existing weighted selection list. It changes selection odds; it does not reroll rewards or add keys to the consumables table.
 
 At the defaults, Luck 10 gives the key entry a 3x weight multiplier. For an original 1:1 key/consumables weight split, that changes the key selection chance from 50% to 75%.
@@ -114,8 +114,8 @@ gradle wrapper --gradle-version 9.2.1 --distribution-type bin
 gradlew.bat clean build
 ~~~
 
-The mod JAR is written to build/libs/. GitHub Actions runs the same wrapper-based build on pushes and pull requests and uploads the JAR as an artifact.
+The mod JAR is written to build/libs/. GitHub Actions builds the mod and starts a dedicated 1.21.1 NeoForge server to catch startup-time Mixin failures before uploading the JAR.
 
 ## Verification
 
-A successful compile does not prove that runtime Mixin injections apply. The Trial Spawner, chest, and vault injection points must also be validated in a 1.21.1 NeoForge game environment.
+The CI server smoke test validates that the mod loads and the registered server-side Mixins apply far enough for the dedicated server to reach its ready state. It does not replace in-game gameplay testing of chest, vault, entity, block, and Trial Spawner behavior.
