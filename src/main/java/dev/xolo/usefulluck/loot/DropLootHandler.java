@@ -36,7 +36,9 @@ public final class DropLootHandler {
     private static Player getResponsiblePlayer(LivingDropsEvent event) {
         Entity source = event.getSource().getEntity();
         if (source instanceof Player player) return player;
-        return event.getEntity().getLastHurtByMob() instanceof Player player ? player : null;
+
+        // getKillCredit preserves vanilla's recent-player-hit attribution.
+        return event.getEntity().getKillCredit() instanceof Player player ? player : null;
     }
 
     private DropLootHandler() {}
