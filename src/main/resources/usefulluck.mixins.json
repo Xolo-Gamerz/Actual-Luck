@@ -4,6 +4,10 @@
   "package": "dev.xolo.usefulluck.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "LootTableAccessor",
+    "LootPoolAccessor",
+    "LootPoolSingletonContainerAccessor",
+    "CompositeEntryBaseAccessor",
     "LootTableGenerationMixin",
     "TrialSpawnerMixin",
     "TrialSpawnerStateMixin",
