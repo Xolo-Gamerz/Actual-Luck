@@ -1,24 +1,17 @@
-
 package dev.xolo.usefulluck;
 
 import dev.xolo.usefulluck.loot.ChestLootRarityTransformer;
 import dev.xolo.usefulluck.loot.DropLootHandler;
-
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 
 @Mod(UsefulLuck.MOD_ID)
 public final class UsefulLuck {
-
     public static final String MOD_ID = "usefulluck";
 
     public UsefulLuck(ModContainer container) {
-        container.registerConfig(
-                ModConfig.Type.SYNCED,
-                LuckConfig.SPEC
-        );
-
+        container.registerConfig(ModConfig.Type.SERVER, LuckConfig.SPEC);
         ChestLootRarityTransformer.register();
         DropLootHandler.register();
     }

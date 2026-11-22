@@ -5,7 +5,7 @@
     "LootTableGenerationMixin",
     "TrialSpawnerMixin",
     "TrialSpawnerStateMixin",
-    "TrialSpawnerStateDataMixin"
+    "TrialSpawnerDataMixin"
   ],
   "injectors": {
     "defaultRequire": 1
